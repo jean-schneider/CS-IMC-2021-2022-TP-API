@@ -53,14 +53,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse("Parameter 'name' not found")
 
     if role:
-        if (role == "DIRECTED" or role == "ACTED_IN"):
-            query += f" WHERE TYPE(r)={role}"
+        #if (role == "DIRECTED" or role == "ACTED_IN"):
+        query += f" WHERE TYPE(r)={role}"
     else:
         return func.HttpResponse("Parameter 'role' not found")
 
     query += " RETURN t.tconst LIMIT 20"
 
-    return func.HttpResponse(f"QUery {query}")
+    dataString = query + "\n"
     
     try:
         logging.info("Test de connexion avec py2neo...")
