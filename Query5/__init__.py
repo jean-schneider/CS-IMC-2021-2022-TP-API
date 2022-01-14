@@ -56,7 +56,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if role:
         query += f" WHERE TYPE(r)={role}"
     else:
-        return func.HttpResponse("Parameter 'name' not found")
+        return func.HttpResponse("Parameter 'role' not found")
 
     query += " RETURN t.tconst LIMIT 20"
     
@@ -67,7 +67,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             films_tconst = graph.run(query)
             for tconst in films_tconst:
                 #dataString += f"CYPHER: nconst={producer['n.nconst']}, primaryName={producer['n.primaryName']}\n"
-                query_sql = f"SELECT primaryTitle, AVG(runtimeMinutes) FROM tTitles WHERE tconst={tconst}”
+                query_sql = f"SELECT primaryTitle, AVG(runtimeMinutes) FROM tTitles WHERE tconst={tconst}"
                 try:
                     logging.info("Test de connexion avec pyodbc...")
                     with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
