@@ -3,7 +3,6 @@ from py2neo import Graph
 from py2neo.bulk import create_nodes, create_relationships
 from py2neo.data import Node
 import os
-import pyodbc as pyodbc
 import azure.functions as func
 
 
@@ -40,7 +39,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         actors = graph.run("MATCH (p:Name)-[r:ACTED_IN]->(:Title) \
                                 WITH p, COUNT(r) as nbFilms \
                                 WHERE nbFilms > 1 \
-                                RETURN p.primaryName, nbFilms ORDER BY nbFilms DESC, p.primaryName")
+                                RETURN p.primaryName, nbFilms ORDER BY nbFilms DESC, p.primaryName \
+                                LIMIT 20")
         for actor in actors:
             dataString += f"CYPHER: {producer['p.primaryName']} acted in {producer['nbFilms']}. \n"
 
