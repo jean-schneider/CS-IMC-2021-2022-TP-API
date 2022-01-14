@@ -8,15 +8,6 @@ import azure.functions as func
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
     
     server = os.environ["TPBDD_SERVER"]
     database = os.environ["TPBDD_DB"]
@@ -49,7 +40,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
     
     if errorMessage != "":
-        return func.HttpResponse(dataString + nameMessage + errorMessage, status_code=500)
+        return func.HttpResponse(dataString + errorMessage, status_code=500)
 
     else:
-        return func.HttpResponse(dataString + nameMessage + " Connexions réussies a Neo4j !")
+        return func.HttpResponse(dataString + " Connexions réussies a Neo4j !")
