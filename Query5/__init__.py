@@ -48,6 +48,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     dataString = ""
 
     query = "MATCH (n:Name)-[r]->(t:Title)"
+
+    name = req.params.get('name')
     if name:
         query += f" WHERE n.primaryName CONTAINS {name}"
     else:
