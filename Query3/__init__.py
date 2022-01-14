@@ -35,6 +35,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
     errorMessage = ""
     dataString = ""
+    nameMessage =""
     
         
     
@@ -44,9 +45,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             logging.info("Test de connexion avec py2neo...")
             graph = Graph(neo4j_server, auth=(neo4j_user, neo4j_password))
             filteredName = name.replace('"','')
+            logging.info("Requetage de neo4j...")
             time1 = time.time()
-            graph.run(f':param Name => {filteredName}')
-            birthYears = graph.run(f"MATCH (n:Name) WHERE n.primaryName = $Name RETURN n.birthYear")
+            #graph.run(f':param Name => {filteredName}')
+            birthYears = graph.run(f"MATCH (n:Name) WHERE n.primaryName = \"{filteredName}\" RETURN n.birthYear")
             time2 = time.time()
             for birthYear in birthYears:
                 dataString += f"CYPHER: {birthYear} \n"
@@ -56,20 +58,23 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                     cursor = conn.cursor()
                     time3 = time.time()
-                    cursor.execute(f"SELECT birthYear FROM [dbo].[tNames] WHERE primaryName = %s'", (name,))
+                    cursor.execute(f"SELECT birthYear FROM [dbo].[tNames] WHERE primaryName = ?", (filteredName,))
                     rows = cursor.fetchall()
                     time4 = time.time()                    
                     for row in rows:
-                        dataString += f"SQL: {row}\n"
-                        dataString += f"Elapsed time : {time3-time4} seconds\n"
+                        dataString += f"SQL: {row[0]}\n"
+                        dataString += f"Elapsed time : {time4-time3} seconds\n"
 
             except:
-                errorMessage = "Erreur de connexion a la base SQL"
+               errorMessage = "Erreur de connexion a la base SQL"
         except:
             errorMessage = "Erreur de connexion a la base Neo4j"
     else:
         nameMessage = "Le parametre 'name' n'a pas ete fourni lors de l'appel.\n"
     
+    if dataString == "":
+        dataString = "Aucune entrée n'a été trouvée avec le nom fourni.\n"
+
     if errorMessage != "":
         return func.HttpResponse(dataString + nameMessage + errorMessage, status_code=500)
 
