@@ -52,7 +52,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             time2 = time.time()
             for birthYear in birthYears:
                 dataString += f"CYPHER: {birthYear} \n"
-                dataString += f"Elapsed time : {time2-time1} seconds\n"
+            dataString += f"Elapsed time : {time2-time1} seconds\n"
             try:
                 logging.info("Test de connexion avec pyodbc...")
                 with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
@@ -63,14 +63,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     time4 = time.time()                    
                     for row in rows:
                         dataString += f"SQL: {row[0]}\n"
-                        dataString += f"Elapsed time : {time4-time3} seconds\n"
+                    dataString += f"Elapsed time : {time4-time3} seconds\n"
 
             except:
                errorMessage = "Erreur de connexion a la base SQL"
         except:
             errorMessage = "Erreur de connexion a la base Neo4j"
     else:
-        nameMessage = "Le parametre 'name' n'a pas ete fourni lors de l'appel.\n"
+        nameMessage =   "Le parametre 'name' n'a pas ete fourni lors de l'appel.\n\
+                        Cette API permet de retourner la date de naissance d'un artiste dont le nom est fourni en paramètre.\n\
+                        La requête est effectuée sur deux bases différentes (MSSQL et Neo4J)."
     
     if dataString == "":
         dataString = "Aucune entrée n'a été trouvée avec le nom fourni.\n"
