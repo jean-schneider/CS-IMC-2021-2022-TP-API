@@ -13,7 +13,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     database = os.environ["TPBDD_DB"]
     username = os.environ["TPBDD_USERNAME"]
     password = os.environ["TPBDD_PASSWORD"]
-    driver= '{ODBC Driver 17 for SQL Server}'
 
     neo4j_server = os.environ["TPBDD_NEO4J_SERVER"]
     neo4j_user = os.environ["TPBDD_NEO4J_USER"]
@@ -28,11 +27,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.info("Test de connexion avec py2neo...")
         graph = Graph(neo4j_server, auth=(neo4j_user, neo4j_password))
         try:
-            actors = graph.run("MATCH (p:Name)-[r:ACTED_IN]->(:Title) 
-WITH p, COUNT(r) as nbFilms
-WHERE nbFilms > 1
-RETURN p.primaryName, nbFilms ORDER BY nbFilms DESC, p.primaryName
-LIMIT 20")
+            actors = graph.run("MATCH (p:Name)-[r:ACTED_IN]->(:Title) WITH p, COUNT(r) as nbFilms WHERE nbFilms > 1 RETURN p.primaryName, nbFilms ORDER BY nbFilms DESC, p.primaryName LIMIT 20")
             for actor in actors:
                 dataString += f"CYPHER: {actor['p.primaryName']} acted in {actor['nbFilms']}. \n"
         except:
