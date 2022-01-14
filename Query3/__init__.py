@@ -50,9 +50,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             #graph.run(f':param Name => {filteredName}')
             birthYears = graph.run(f"MATCH (n:Name) WHERE n.primaryName = \"{filteredName}\" RETURN n.birthYear")
             time2 = time.time()
+            rowsCount = 0
             for birthYear in birthYears:
                 dataString += f"CYPHER: {birthYear} \n"
-            dataString += f"Elapsed time : {time2-time1} seconds\n"
+                rowsCount += 1
+            if rowsCount > 0:
+                dataString += f"Elapsed time : {time2-time1} seconds\n"
             try:
                 logging.info("Test de connexion avec pyodbc...")
                 with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
@@ -60,10 +63,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     time3 = time.time()
                     cursor.execute(f"SELECT birthYear FROM [dbo].[tNames] WHERE primaryName = ?", (filteredName,))
                     rows = cursor.fetchall()
-                    time4 = time.time()                    
-                    for row in rows:
-                        dataString += f"SQL: {row[0]}\n"
-                    dataString += f"Elapsed time : {time4-time3} seconds\n"
+                    time4 = time.time()
+                    if len(rows) > 0:                   
+                        for row in rows:
+                            dataString += f"SQL: {row[0]}\n"
+                        dataString += f"Elapsed time : {time4-time3} seconds\n"
 
             except:
                errorMessage = "Erreur de connexion a la base SQL"
