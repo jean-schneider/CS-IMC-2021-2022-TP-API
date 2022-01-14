@@ -29,7 +29,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             actors = graph.run("MATCH (p:Name)-[r:ACTED_IN]->(:Title) WITH p, COUNT(r) as nbFilms WHERE nbFilms > 1 RETURN p.primaryName, nbFilms ORDER BY nbFilms DESC, p.primaryName LIMIT 20")
             for actor in actors:
-                dataString += f"CYPHER: {actor['p.primaryName']} acted in {actor['nbFilms']}. \n"
+                dataString += f"CYPHER: {actor['p.primaryName']} acted in {actor['nbFilms']} films. \n"
         except:
             errorMessage = "Bad request"
 
