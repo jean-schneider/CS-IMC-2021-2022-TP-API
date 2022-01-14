@@ -76,7 +76,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
                         rows = cursor.fetchall()
                         for row in rows:
-                            dataString += f"{name} {role} {row[0]} which is {row[1]} minutes long}\n"
+                            dataString += f"{name} {role} {row[0]} which is {row[1]} minutes long\n"
 
 
                 except:
