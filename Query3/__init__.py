@@ -43,7 +43,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             logging.info("Test de connexion avec py2neo...")
             graph = Graph(neo4j_server, auth=(neo4j_user, neo4j_password))
-            filteredName = name.remove('"')
+            filteredName = name.replace('"','')
             time1 = time.time()
             graph.run(f':param Name => {filteredName}')
             birthYears = graph.run(f"MATCH (n:Name) WHERE n.primaryName = $Name RETURN n.birthYear")
