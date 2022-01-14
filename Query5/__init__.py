@@ -28,9 +28,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             role = req_body.get('role')
 
-    if not (role == "DIRECTED" or role == "ACTED_IN"):
-        role=False
-
     server = os.environ["TPBDD_SERVER"]
     database = os.environ["TPBDD_DB"]
     username = os.environ["TPBDD_USERNAME"]
@@ -56,11 +53,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse("Parameter 'name' not found")
 
     if role:
-        query += f" WHERE TYPE(r)={role}"
+        if (role == "DIRECTED" or role == "ACTED_IN"):
+            query += f" WHERE TYPE(r)={role}"
     else:
         return func.HttpResponse("Parameter 'role' not found")
 
     query += " RETURN t.tconst LIMIT 20"
+
+    return func.HttpResponse(f"QUery {query}")
     
     try:
         logging.info("Test de connexion avec py2neo...")
