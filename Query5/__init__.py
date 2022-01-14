@@ -28,7 +28,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             role = req_body.get('role')
 
-    if role != "DIRECTED" or role != "ACTED_IN":
+    if not (role == "DIRECTED" or role == "ACTED_IN"):
         role=False
 
     server = os.environ["TPBDD_SERVER"]
