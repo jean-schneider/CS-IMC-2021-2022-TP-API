@@ -14,23 +14,25 @@ def getRequestAttribute(req: func.HttpRequest, param):
             pass
         else:
             param = req_body.get(param)
+    if param:
+        param = param.replace('"','')
     return param
 
 def buildNeo4jQuery(name, genre, role):
     query = "MATCH (n:Name)-[r]->(t:Title)-[s]->(g:Genre) WHERE"
     if name:
-        query += f" n.primaryName CONTAINS {name} "
+        query += f" n.primaryName CONTAINS \"{name}\" "
 
     if role:
         #if (role == "DIRECTED" or role == "ACTED_IN"):
         if not name :
             return func.HttpResponse("Parameter 'role' supplied but no 'name' was provided. A 'name' is required to use a filter by 'role'.")
-        query += f" AND TYPE(r)={role} "
+        query += f" AND TYPE(r)=\"{role}\" "
 
     if genre:
         if name:
             query += " AND "
-        query += f" g.genre = {genre} "
+        query += f" g.genre = \"{genre}\" "
     
     query += " RETURN DISTINCT t.tconst LIMIT 20"
     return query
@@ -58,13 +60,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     errorMessage = ""
     dataString = ""
 
-    if (genre is None and name is None) or (len(genre) == 0 and len(name) == 0):
+    if (genre is None and name is None):
         return func.HttpResponse("\tNo suitable parameter was supplied for the request.\n\
         Known parameters are : 'name', 'genre and 'role' (optional, must be combined with 'name'):\n\
         - 'name': name of the artist to filter the request with;\n\
         - 'role': if a name is supplied, restricts the request to the films where the artist had the specified role;\n\
         - 'genre': genre used to filter the request with.\n\
-        At least one parameter is required, and they can all be combined.\n")
+        At least one parameter from the list above is required.\n")
     
     #TODO: Requete pour trouver les films par genre ET OU par nom d'artiste (et avec son rôle si fourni)
     query = buildNeo4jQuery(name, genre, role)
