@@ -21,14 +21,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse("Au moins une des variables d'environnement n'a pas été initialisée.", status_code=500)
         
     errorMessage = ""
-    dataString = "Années de naissances les plus représentées parmi les"
+    dataString = "Années de naissances les plus représentées parmi les acteurs \n"
 
     try:
         logging.info("Test de connexion avec pyodbc...")
         with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             cursor = conn.cursor()
             time3 = time.time()
-            cursor.execute(f"SELECT TOP 5 * FROM (SELECT birthYear, count(primaryName) nombre FROM tNames WHERE birthYear != 0 GROUP BY birthYear) decompte ORDER BY nombre DESC", (filteredName,))
+            cursor.execute(f"SELECT birthYear, count(primaryName) nombre FROM tNames WHERE birthYear != 0 GROUP BY birthYear", (filteredName,))
             rows = cursor.fetchall()
             time4 = time.time()
             if len(rows) > 0:                   
