@@ -33,7 +33,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             time4 = time.time()
             if len(rows) > 0:                   
                 for row in rows:
-                    dataString += f"SQL: {row[0]}\n"
+                    dataString += f"{row[0]} avec {row[1]} acteurs. \n"
                 dataString += f"Elapsed time : {time4-time3} seconds\n"
 
     except:
