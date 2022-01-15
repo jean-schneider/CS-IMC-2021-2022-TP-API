@@ -1,32 +1,46 @@
+from distutils.command import build
 import logging
 from py2neo import Graph
-from py2neo.bulk import create_nodes, create_relationships
-from py2neo.data import Node
 import os
 import pyodbc as pyodbc
 import azure.functions as func
 
+def getRequestAttribute(req: func.HttpRequest, param):
+    param = req.params.get(param)
+    if not param:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            param = req_body.get(param)
+    return param
+
+def buildNeo4jQuery(name, genre, role):
+    query = "MATCH (n:Name)-[r]->(t:Title)-[s]->(g:Genre) WHERE"
+    if name:
+        query += f" n.primaryName CONTAINS {name} "
+
+    if role:
+        #if (role == "DIRECTED" or role == "ACTED_IN"):
+        if not name :
+            return func.HttpResponse("Parameter 'role' supplied but no 'name' was provided. A 'name' is required to use a filter by 'role'.")
+        query += f" AND TYPE(r)={role} "
+
+    if genre:
+        if name:
+            query += " AND "
+        query += f" g.genre = {genre} "
+    
+    query += " RETURN DISTINCT t.tconst LIMIT 20"
+    return query
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    genre = req.params.get('genre')
-    if not genre:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            genre = req_body.get('genre')
-    
-    role = req.params.get('role')
-    if not role:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            role = req_body.get('role')
+    genre = getRequestAttribute(req, 'genre')
+    role = getRequestAttribute(req, 'role')
+    name = getRequestAttribute(req, 'name')
 
     server = os.environ["TPBDD_SERVER"]
     database = os.environ["TPBDD_DB"]
@@ -44,54 +58,64 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     errorMessage = ""
     dataString = ""
 
-    query = "MATCH (n:Name)-[r]->(t:Title)"
-
-    name = req.params.get('name')
-    if name:
-        query += f" WHERE n.primaryName CONTAINS {name}"
-    else:
-        return func.HttpResponse("Parameter 'name' not found")
-
-    if role:
-        #if (role == "DIRECTED" or role == "ACTED_IN"):
-        query += f" WHERE TYPE(r)={role}"
-    else:
-        return func.HttpResponse("Parameter 'role' not found")
-
-    query += " RETURN t.tconst LIMIT 20"
-
+    if (genre is None and name is None) or (len(genre) == 0 and len(name) == 0):
+        return func.HttpResponse("\tNo suitable parameter was supplied for the request.\n\
+        Known parameters are : 'name', 'genre and 'role' (optional, must be combined with 'name'):\n\
+        - 'name': name of the artist to filter the request with;\n\
+        - 'role': if a name is supplied, restricts the request to the films where the artist had the specified role;\n\
+        - 'genre': genre used to filter the request with.\n\
+        At least one parameter is required, and they can all be combined.\n")
+    
+    #TODO: Requete pour trouver les films par genre ET OU par nom d'artiste (et avec son rôle si fourni)
+    query = buildNeo4jQuery(name, genre, role)
     dataString = query + "\n"
     
     try:
         logging.info("Test de connexion avec py2neo...")
         graph = Graph(neo4j_server, auth=(neo4j_user, neo4j_password))
+        logging.info(query)
         try:
             films_tconst = graph.run(query)
+            tconst_list = []
+            nb_const_fetched = 0
+            query_sql = "SELECT primaryTitle, runtimeMinutes FROM tTitles WHERE tconst= ? "
             for tconst in films_tconst:
-                #dataString += f"CYPHER: nconst={producer['n.nconst']}, primaryName={producer['n.primaryName']}\n"
-                query_sql = f"SELECT primaryTitle, AVG(runtimeMinutes) FROM tTitles WHERE tconst={tconst}"
+                nb_const_fetched += 1
+                tconst_list.append(str(tconst).replace("'",""))
                 try:
                     logging.info("Test de connexion avec pyodbc...")
                     with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                         cursor = conn.cursor()
-                        cursor.execute(query)
+                        cursor.execute(query_sql, (str(tconst).replace("'",""),))
 
                         rows = cursor.fetchall()
                         for row in rows:
-                            dataString += f"{name} {role} {row[0]} which is {row[1]} minutes long\n"
-
-
+                            dataString += f"{name} {role} {genre} : {row[0]} which is {row[1]} minutes long\n"
                 except:
                     errorMessage = "Erreur de connexion a la base SQL"
+            if nb_const_fetched > 0:
+                sql_global_query = "SELECT avg(runtimeMinutes) FROM tTitles WHERE tconst in ( ?"
+                for _ in range(len(tconst_list)-1):
+                    sql_global_query += ", ?"
+                sql_global_query += ")"
+                    
+                with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(sql_global_query, tconst_list)
+
+                    rows = cursor.fetchall()
+                    logging.info(rows)
+                    for row in rows:
+                        logging.info(row)
+                        dataString += f"\n\n --> Average duration is {row[0]} minutes\n"
+            else:
+                dataString += "No data fetched for the given parameters. Please try again with another input and / or refer to the API description.\n"
         except:
             errorMessage = "Erreur de requete"
     except:
         errorMessage = "Erreur de connexion a la base Neo4j"
-        
-    
     
     if errorMessage != "":
         return func.HttpResponse(dataString + errorMessage, status_code=500)
-
     else:
         return func.HttpResponse(dataString + " Connexions réussies a Neo4j et SQL!")
