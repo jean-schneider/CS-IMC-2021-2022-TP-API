@@ -36,7 +36,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     errorMessage = ""
     dataString = ""
     nameMessage =""
-    
+    description = "Affichage de l'année de naissance pour le nom passé en paramètre, avec comparatif des performances des deux bases de données.\n\n"     
         
     
     if name:
@@ -52,10 +52,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             time2 = time.time()
             rowsCount = 0
             for birthYear in birthYears:
-                dataString += f"CYPHER: {birthYear} \n"
+                dataString += f"CYPHER:\nAnnée de naissance trouvée : {birthYear} \n"
                 rowsCount += 1
             if rowsCount > 0:
-                dataString += f"Elapsed time : {time2-time1} seconds\n"
+                dataString += f"Elapsed time : {time2-time1} seconds\n\n"
             try:
                 logging.info("Test de connexion avec pyodbc...")
                 with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
@@ -66,7 +66,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     time4 = time.time()
                     if len(rows) > 0:                   
                         for row in rows:
-                            dataString += f"SQL: {row[0]}\n"
+                            dataString += f"SQL:\nAnnée de naissance trouvée : {row[0]}\n"
                         dataString += f"Elapsed time : {time4-time3} seconds\n"
 
             except:
@@ -74,15 +74,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         except:
             errorMessage = "Erreur de connexion a la base Neo4j"
     else:
-        nameMessage =   "Le parametre 'name' n'a pas ete fourni lors de l'appel.\n\
-                        Cette API permet de retourner la date de naissance d'un artiste dont le nom est fourni en paramètre.\n\
-                        La requête est effectuée sur deux bases différentes (MSSQL et Neo4J)."
-    
+        nameMessage =   """Le parametre 'name' n'a pas ete fourni lors de l'appel.\n\
+    Cette API permet de retourner la date de naissance d'un artiste dont le nom est fourni en paramètre.\n\
+    La requête est effectuée sur deux bases différentes (MSSQL et Neo4J).\n\n"""
+
     if dataString == "":
-        dataString = "Aucune entrée n'a été trouvée avec le nom fourni.\n"
+        dataString = "Aucune entrée n'a été trouvée avec le nom fourni.\n\n"
 
     if errorMessage != "":
-        return func.HttpResponse(dataString + nameMessage + errorMessage, status_code=500)
+        return func.HttpResponse(description + dataString + nameMessage + errorMessage, status_code=500)
 
     else:
-        return func.HttpResponse(dataString + nameMessage + " Connexions réussies a Neo4j et SQL!")
+        return func.HttpResponse(description + dataString + nameMessage + " Connexions réussies a Neo4j et SQL!")
